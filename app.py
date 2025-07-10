@@ -10,11 +10,76 @@ app = FastAPI()
 
 # In-memory data stores
 books = [
-    {"id": 1, "name": "The Great Gatsby", "type": "fiction", "available": True},
-    {"id": 2, "name": "A Brief History of Time", "type": "non-fiction", "available": True},
-    {"id": 3, "name": "1984", "type": "fiction", "available": True},
-    {"id": 4, "name": "Sapiens", "type": "non-fiction", "available": True},
-    {"id": 5, "name": "To Kill a Mockingbird", "type": "fiction", "available": True},
+    {
+        "id": 1,
+        "name": "The Russian",
+        "author": "James Patterson and James O. Born",
+        "isbn": "1780899475",
+        "type": "fiction",
+        "price": 12.98,
+        "current-stock": 12,
+        "available": True
+    },
+    {
+        "id": 2,
+        "name": "Where the Crawdads Sing",
+        "author": "Delia Owens",
+        "isbn": "0735219095",
+        "type": "fiction",
+        "price": 15.99,
+        "current-stock": 8,
+        "available": True
+    },
+    {
+        "id": 3,
+        "name": "The Vanishing Half",
+        "author": "Brit Bennett",
+        "isbn": "0525536299",
+        "type": "fiction",
+        "price": 13.99,
+        "current-stock": 5,
+        "available": True
+    },
+    {
+        "id": 4,
+        "name": "The Midnight Library",
+        "author": "Matt Haig",
+        "isbn": "0525559477",
+        "type": "fiction",
+        "price": 14.99,
+        "current-stock": 10,
+        "available": True
+    },
+    {
+        "id": 5,
+        "name": "Educated",
+        "author": "Tara Westover",
+        "isbn": "0399590501",
+        "type": "non-fiction",
+        "price": 11.99,
+        "current-stock": 7,
+        "available": True
+    },
+    {
+        "id": 6,
+        "name": "Becoming",
+        "author": "Michelle Obama",
+        "isbn": "1524763136",
+        "type": "non-fiction",
+        "price": 16.99,
+        "current-stock": 6,
+        "available": True
+    },
+    {
+        "id": 7,
+        "name": "Sapiens",
+        "author": "Yuval Noah Harari",
+        "isbn": "0062316095",
+        "type": "non-fiction",
+        "price": 18.99,
+        "current-stock": 9,
+        "available": True
+    },
 ]
 orders: Dict[str, Dict] = {}
 api_clients: Dict[str, Dict] = {}
@@ -48,7 +113,9 @@ async def get_books(type: Optional[str] = None, limit: Optional[int] = None):
         filtered = [b for b in filtered if b["type"] == type]
     if limit:
         filtered = filtered[:limit]
-    return filtered
+    # Return only basic details for all books
+    basic_fields = ("id", "name", "type", "available")
+    return [{k: b[k] for k in basic_fields} for b in filtered]
 
 # Get a single book
 @app.get("/books/{book_id}")
