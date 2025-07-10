@@ -4,7 +4,11 @@
 from fastapi import FastAPI, HTTPException, Request, Header
 from fastapi.responses import JSONResponse
 from typing import Optional, Dict
+
 import uuid
+import json
+import os
+from fastapi import status
 
 app = FastAPI()
 
@@ -82,7 +86,24 @@ books = [
     },
 ]
 orders: Dict[str, Dict] = {}
-api_clients: Dict[str, Dict] = {}
+
+API_CLIENTS_FILE = os.path.join(os.path.dirname(__file__), 'db', 'api_clients.json')
+def load_api_clients():
+    if not os.path.exists(API_CLIENTS_FILE):
+        return {}
+    with open(API_CLIENTS_FILE, 'r') as f:
+        try:
+            data = json.load(f)
+            return {c["token"]: c for c in data}
+        except Exception:
+            return {}
+
+def save_api_clients(clients_dict):
+    data = list(clients_dict.values())
+    with open(API_CLIENTS_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+api_clients: Dict[str, Dict] = load_api_clients()
 
 # Status endpoint
 @app.get("/status")
@@ -133,12 +154,15 @@ async def register_client(request: Request):
     client_name = data.get("clientName")
     if not client_email or not client_name:
         raise HTTPException(status_code=400, detail="clientEmail and clientName required.")
-    # Check for existing
-    for client in api_clients.values():
+    # Always reload from file to avoid race conditions
+    clients = load_api_clients()
+    for client in clients.values():
         if client["clientEmail"] == client_email:
             raise HTTPException(status_code=409, detail="API client already registered.")
     token = str(uuid.uuid4())
-    api_clients[token] = {"clientEmail": client_email, "clientName": client_name}
+    client_obj = {"token": token, "clientEmail": client_email, "clientName": client_name}
+    clients[token] = client_obj
+    save_api_clients(clients)
     return {"accessToken": token}
 
 # Submit an order (requires auth)
@@ -146,14 +170,22 @@ async def register_client(request: Request):
 async def submit_order(request: Request, authorization: Optional[str] = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Authorization header required.")
-    token = authorization.split(" ", 1)[1]
-    if token not in api_clients:
+    token = authorization.split(" ", 1)[1].strip()
+    clients = load_api_clients()
+    print(f"Token from header: '{token}'")
+    print(f"Tokens in file: {list(clients.keys())}")
+    if token not in clients:
         raise HTTPException(status_code=401, detail="Invalid or missing token.")
-    data = await request.json()
+    try:
+        data = await request.json()
+    except Exception:
+        return JSONResponse(status_code=400, content={"error": "Invalid or missing bookId."})
     book_id = data.get("bookId")
     customer_name = data.get("customerName")
-    if not book_id or not customer_name:
-        raise HTTPException(status_code=400, detail="bookId and customerName required.")
+    if not book_id:
+        return JSONResponse(status_code=400, content={"error": "Invalid or missing bookId."})
+    if not customer_name:
+        return JSONResponse(status_code=400, content={"error": "Invalid or missing customerName."})
     # Check book exists
     book = next((b for b in books if b["id"] == book_id), None)
     if not book:
@@ -168,8 +200,11 @@ async def submit_order(request: Request, authorization: Optional[str] = Header(N
 async def get_orders(authorization: Optional[str] = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Authorization header required.")
-    token = authorization.split(" ", 1)[1]
-    if token not in api_clients:
+    token = authorization.split(" ", 1)[1].strip()
+    clients = load_api_clients()
+    print(f"Token from header: '{token}'")
+    print(f"Tokens in file: {list(clients.keys())}")
+    if token not in clients:
         raise HTTPException(status_code=401, detail="Invalid or missing token.")
     return list(orders.values())
 
@@ -178,8 +213,11 @@ async def get_orders(authorization: Optional[str] = Header(None)):
 async def get_order(order_id: str, authorization: Optional[str] = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Authorization header required.")
-    token = authorization.split(" ", 1)[1]
-    if token not in api_clients:
+    token = authorization.split(" ", 1)[1].strip()
+    clients = load_api_clients()
+    print(f"Token from header: '{token}'")
+    print(f"Tokens in file: {list(clients.keys())}")
+    if token not in clients:
         raise HTTPException(status_code=401, detail="Invalid or missing token.")
     order = orders.get(order_id)
     if not order:
@@ -191,8 +229,11 @@ async def get_order(order_id: str, authorization: Optional[str] = Header(None)):
 async def update_order(order_id: str, request: Request, authorization: Optional[str] = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Authorization header required.")
-    token = authorization.split(" ", 1)[1]
-    if token not in api_clients:
+    token = authorization.split(" ", 1)[1].strip()
+    clients = load_api_clients()
+    print(f"Token from header: '{token}'")
+    print(f"Tokens in file: {list(clients.keys())}")
+    if token not in clients:
         raise HTTPException(status_code=401, detail="Invalid or missing token.")
     order = orders.get(order_id)
     if not order:
@@ -208,8 +249,11 @@ async def update_order(order_id: str, request: Request, authorization: Optional[
 async def delete_order(order_id: str, authorization: Optional[str] = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Authorization header required.")
-    token = authorization.split(" ", 1)[1]
-    if token not in api_clients:
+    token = authorization.split(" ", 1)[1].strip()
+    clients = load_api_clients()
+    print(f"Token from header: '{token}'")
+    print(f"Tokens in file: {list(clients.keys())}")
+    if token not in clients:
         raise HTTPException(status_code=401, detail="Invalid or missing token.")
     if order_id not in orders:
         raise HTTPException(status_code=404, detail="Order not found.")

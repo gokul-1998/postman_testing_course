@@ -1,0 +1,72 @@
+[
+    {
+        "id": 1,
+        "name": "The Russian",
+        "author": "James Patterson and James O. Born",
+        "isbn": "1780899475",
+        "type": "fiction",
+        "price": 12.98,
+        "current-stock": 12,
+        "available": true
+    },
+    {
+        "id": 2,
+        "name": "Where the Crawdads Sing",
+        "author": "Delia Owens",
+        "isbn": "0735219095",
+        "type": "fiction",
+        "price": 15.99,
+        "current-stock": 8,
+        "available": true
+    },
+    {
+        "id": 3,
+        "name": "The Vanishing Half",
+        "author": "Brit Bennett",
+        "isbn": "0525536299",
+        "type": "fiction",
+        "price": 13.99,
+        "current-stock": 5,
+        "available": true
+    },
+    {
+        "id": 4,
+        "name": "The Midnight Library",
+        "author": "Matt Haig",
+        "isbn": "0525559477",
+        "type": "fiction",
+        "price": 14.99,
+        "current-stock": 10,
+        "available": true
+    },
+    {
+        "id": 5,
+        "name": "Educated",
+        "author": "Tara Westover",
+        "isbn": "0399590501",
+        "type": "non-fiction",
+        "price": 11.99,
+        "current-stock": 7,
+        "available": true
+    },
+    {
+        "id": 6,
+        "name": "Becoming",
+        "author": "Michelle Obama",
+        "isbn": "1524763136",
+        "type": "non-fiction",
+        "price": 16.99,
+        "current-stock": 6,
+        "available": true
+    },
+    {
+        "id": 7,
+        "name": "Sapiens",
+        "author": "Yuval Noah Harari",
+        "isbn": "0062316095",
+        "type": "non-fiction",
+        "price": 18.99,
+        "current-stock": 9,
+        "available": true
+    }
+]
