@@ -1,4 +1,4 @@
-    
+
 # FastAPI implementation for Simple Books API proxy
 
 from fastapi import FastAPI, HTTPException, Request, Header
@@ -27,6 +27,22 @@ async def get_status():
 # List of books
 @app.get("/books")
 async def get_books(type: Optional[str] = None, limit: Optional[int] = None):
+    allowed_types = {"fiction", "non-fiction"}
+    if type and type not in allowed_types:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": "Invalid value for query parameter 'type'. Must be one of: fiction, non-fiction."
+            },
+        )
+    if limit is not None:
+        if not (1 <= limit <= 20):
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": "Invalid value for query parameter 'limit'. Must be between 1 and 20."
+                },
+            )
     filtered = books
     if type:
         filtered = [b for b in filtered if b["type"] == type]
