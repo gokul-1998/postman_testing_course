@@ -1,0 +1,10 @@
+[project]
+name = "postman-testing-course"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi[standard]>=0.116.0",
+    "flask>=3.1.1",
+]
