@@ -151,10 +151,12 @@ async def submit_order(request: Request, authorization: Optional[str] = Header(N
         return JSONResponse(status_code=400, content={"error": "Invalid or missing bookId."})
     if not customer_name:
         return JSONResponse(status_code=400, content={"error": "Invalid or missing customerName."})
-    # Check book exists
+    # Check book exists and is available
     book = next((b for b in books if b["id"] == book_id), None)
     if not book:
         raise HTTPException(status_code=404, detail="Book not found.")
+    if not book.get("available", False):
+        return JSONResponse(status_code=404, content={"error": "This Book is not in stock.Try ordering later."})
     order_id = str(uuid.uuid4())[:20]
     order = {"id": order_id, "bookId": book_id, "customerName": customer_name}
     orders[order_id] = order
