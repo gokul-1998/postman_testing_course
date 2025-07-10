@@ -12,80 +12,38 @@ from fastapi import status
 
 app = FastAPI()
 
-# In-memory data stores
-books = [
-    {
-        "id": 1,
-        "name": "The Russian",
-        "author": "James Patterson and James O. Born",
-        "isbn": "1780899475",
-        "type": "fiction",
-        "price": 12.98,
-        "current-stock": 12,
-        "available": True
-    },
-    {
-        "id": 2,
-        "name": "Where the Crawdads Sing",
-        "author": "Delia Owens",
-        "isbn": "0735219095",
-        "type": "fiction",
-        "price": 15.99,
-        "current-stock": 8,
-        "available": True
-    },
-    {
-        "id": 3,
-        "name": "The Vanishing Half",
-        "author": "Brit Bennett",
-        "isbn": "0525536299",
-        "type": "fiction",
-        "price": 13.99,
-        "current-stock": 5,
-        "available": True
-    },
-    {
-        "id": 4,
-        "name": "The Midnight Library",
-        "author": "Matt Haig",
-        "isbn": "0525559477",
-        "type": "fiction",
-        "price": 14.99,
-        "current-stock": 10,
-        "available": True
-    },
-    {
-        "id": 5,
-        "name": "Educated",
-        "author": "Tara Westover",
-        "isbn": "0399590501",
-        "type": "non-fiction",
-        "price": 11.99,
-        "current-stock": 7,
-        "available": True
-    },
-    {
-        "id": 6,
-        "name": "Becoming",
-        "author": "Michelle Obama",
-        "isbn": "1524763136",
-        "type": "non-fiction",
-        "price": 16.99,
-        "current-stock": 6,
-        "available": True
-    },
-    {
-        "id": 7,
-        "name": "Sapiens",
-        "author": "Yuval Noah Harari",
-        "isbn": "0062316095",
-        "type": "non-fiction",
-        "price": 18.99,
-        "current-stock": 9,
-        "available": True
-    },
-]
-orders: Dict[str, Dict] = {}
+# File paths
+PRODUCTS_FILE = os.path.join(os.path.dirname(__file__), 'db', 'products.json')
+ORDERS_FILE = os.path.join(os.path.dirname(__file__), 'db', 'orders.json')
+
+# Middleware to load data before every request
+@app.middleware("http")
+async def load_data_middleware(request, call_next):
+    global books, orders
+    # Load books
+    if not os.path.exists(PRODUCTS_FILE):
+        raise FileNotFoundError(f"Products file not found: {PRODUCTS_FILE}")
+    with open(PRODUCTS_FILE, 'r') as f:
+        try:
+            books = json.load(f)
+        except Exception:
+            raise ValueError(f"Error loading products from {PRODUCTS_FILE}")
+    # Load orders as dict keyed by id
+    if not os.path.exists(ORDERS_FILE):
+        raise FileNotFoundError(f"Orders file not found: {ORDERS_FILE}")
+    with open(ORDERS_FILE, 'r') as f:
+        try:
+            orders_list = json.load(f)
+            if isinstance(orders_list, list):
+                orders = {o["id"]: o for o in orders_list if "id" in o}
+            elif isinstance(orders_list, dict):
+                orders = orders_list
+            else:
+                orders = {}
+        except Exception:
+            raise ValueError(f"Error loading orders from {ORDERS_FILE}")
+    response = await call_next(request)
+    return response
 
 API_CLIENTS_FILE = os.path.join(os.path.dirname(__file__), 'db', 'api_clients.json')
 def load_api_clients():
@@ -98,10 +56,17 @@ def load_api_clients():
         except Exception:
             return {}
 
+
 def save_api_clients(clients_dict):
     data = list(clients_dict.values())
     with open(API_CLIENTS_FILE, 'w') as f:
         json.dump(data, f, indent=2)
+
+# Save orders to file
+def save_orders(orders_dict):
+    # Save as a list of order objects
+    with open(ORDERS_FILE, 'w') as f:
+        json.dump(list(orders_dict.values()), f, indent=2)
 
 api_clients: Dict[str, Dict] = load_api_clients()
 
@@ -193,7 +158,8 @@ async def submit_order(request: Request, authorization: Optional[str] = Header(N
     order_id = str(uuid.uuid4())[:20]
     order = {"id": order_id, "bookId": book_id, "customerName": customer_name}
     orders[order_id] = order
-    return {"orderId": order_id}
+    save_orders(orders)
+    return {"created": True, "orderId": order_id}
 
 # Get all orders (requires auth)
 @app.get("/orders")
@@ -242,6 +208,7 @@ async def update_order(order_id: str, request: Request, authorization: Optional[
     customer_name = data.get("customerName")
     if customer_name:
         order["customerName"] = customer_name
+        save_orders(orders)
     return order
 
 # Delete an order (requires auth)
@@ -258,5 +225,6 @@ async def delete_order(order_id: str, authorization: Optional[str] = Header(None
     if order_id not in orders:
         raise HTTPException(status_code=404, detail="Order not found.")
     del orders[order_id]
+    save_orders(orders)
     return JSONResponse(status_code=204, content={})
 

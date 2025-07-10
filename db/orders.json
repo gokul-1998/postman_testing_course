@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "id": "616cfe72-0704-4257-9",
+    "bookId": 1,
+    "customerName": "John"
+  },
+  {
+    "id": "4a53ccc4-7d53-4192-8",
+    "bookId": 2,
+    "customerName": "John"
+  }
+]

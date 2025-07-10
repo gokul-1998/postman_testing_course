@@ -17,7 +17,7 @@
         "type": "fiction",
         "price": 15.99,
         "current-stock": 8,
-        "available": true
+        "available": false
     },
     {
         "id": 3,
