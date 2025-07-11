@@ -161,7 +161,7 @@ async def submit_order(request: Request, authorization: Optional[str] = Header(N
     order = {"id": order_id, "bookId": book_id, "customerName": customer_name}
     orders[order_id] = order
     save_orders(orders)
-    return {"created": True, "orderId": order_id}
+    return JSONResponse(status_code=201, content={"created": True, "orderId": order_id})
 
 # Get all orders (requires auth)
 @app.get("/orders")
